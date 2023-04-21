@@ -148,7 +148,8 @@ def filter_(image, filter_name, filter_size, sigma):
         image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
         filtered_image = kuwahara_filter(image, filter_size)
         filtered_image = cv2.cvtColor(filtered_image, cv2.COLOR_HSV2RGB)
-    
+    else:
+        print("wrong filter, shouldnt get here")
     # plot the image
     plt.imshow(filtered_image)
     plt.show()
@@ -164,16 +165,27 @@ def get_image(image_path):
     # Read the image - Notice that OpenCV reads the images as BRG instead of RGB
     return cv2.imread(image_path)
 
+def do_filter():
+    if (args.filter == "none"):
+        args.filter = options.get()
+        print("getting selected option")
+    if (args.image == "none"):
+        root = tk.Tk()
+        root.withdraw()
+        file_path = fd.askopenfilename()
+        args.image = file_path
+    filter_(get_image(args.image), args.filter, int(args.size), int(args.sigma))
+    exit(0)
 
 if __name__ == '__main__':
     import argparse
     # Parse command line arguments
     parser = argparse.ArgumentParser(
         description='Apply filters to images')
-    parser.add_argument("--image", default="sample_image.jpg",
+    parser.add_argument("--image", default="none",
                         metavar="path/to/image",
                         help="'image path'")
-    parser.add_argument("--filter",required=True,
+    parser.add_argument("--filter", default="none",
                         help="'Filter name: mean, gaussian or kuwahara'")
     parser.add_argument("--size",
                         default=5,
@@ -187,9 +199,46 @@ if __name__ == '__main__':
     args = parser.parse_args()
     # get filter name
     filter_name = args.filter
-    if filter_name != "mean" and filter_name != "gaussian" and filter_name != "kuwahara":
-        raise ValueError("Please enter a valid filter name")
-    if int(args.size)%2 == 0:
+
+    if (int(args.size)%2 == 0):
         raise ValueError("Please enter an odd number")
     
-    filter_(get_image(args.image), filter_name, int(args.size), int(args.sigma))
+    if (args.image=="none"):
+        root = tk.Tk()
+        root.withdraw()
+        file_path = fd.askopenfilename()
+        args.image = file_path
+    else:
+        file_path = args.image
+    
+    if (filter_name != "mean" and filter_name != "gaussian" and filter_name != "kuwahara" and filter_name != "none"):
+        raise ValueError("Please enter a valid filter name")
+    
+    if (filter_name == "none"):
+        my_w = tk.Tk()
+        my_w.geometry("300x200") # size of window
+        my_w.title("Image Processing Options")
+        
+        l3 = tk.Label(my_w, text='Select Filter', width = 15)
+        l3.grid(row=5, column=1)
+
+        optionlist = ["kuwahara","gaussian","mean"]
+        options = tk.StringVar(my_w)
+        options.set(optionlist[0]) # default value
+        
+        b1 = tk.Button(my_w,  text='run',command=lambda:do_filter())
+        b1.grid(row=5,column=3) 
+
+        om1 =tk.OptionMenu(my_w, options, *optionlist)
+        om1.grid(row=5,column=2)
+
+        l2 = tk.Label(my_w,  text="Size: ", width=6 )
+        l2.grid(row=5,column=4)
+
+        l2 = tk.Label(my_w,  textvariable=str(args.size), width=5 )
+        l2.grid(row=5,column=5)
+
+        my_w.mainloop()  # Keep the window open
+
+    do_filter()
+    exit(0)
